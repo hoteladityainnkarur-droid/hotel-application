@@ -58,35 +58,21 @@ logoutBtn.addEventListener('click', () => {
     });
 });
 
-// Function to fetch and display hotel data
 function fetchHotelData(userEmail) {
-    let hotelDocId = '';
-    
-    if (userEmail === 'user1@example.com') {
-        hotelDocId = 'hotel-a';
-    } else if (userEmail === 'user2@example.com') {
-        hotelDocId = 'hotel-b';
-    } else if (userEmail === 'user3@example.com') {
-        hotelDocId = 'hotel-c';
-    } else {
-        alert('Unauthorized user.');
-        signOut(auth);
-        return;
-    }
-
-    const docRef = doc(db, 'hotels', hotelDocId);
-    getDoc(docRef).then((docSnap) => {
-        if (docSnap.exists()) {
-            const hotelData = docSnap.data();
-            hotelNameElement.textContent = hotelData.name;
-            displayRooms(hotelData.rooms, hotelDocId);
-        } else {
-            console.error("No such hotel document!");
-        }
-    }).catch((error) => {
-        console.error("Error getting hotel data:", error);
-    });
+    db.collection('hotels').get()
+        .then((querySnapshot) => {
+            const hotelsData = [];
+            querySnapshot.forEach((doc) => {
+                hotelsData.push(doc.data());
+            });
+            displayAllHotels(hotelsData);
+        })
+        .catch((error) => {
+            console.error("Error getting all hotels:", error);
+            alert("Error loading hotels. Please try again.");
+        });
 }
+
 
 // Function to display rooms
 function displayRooms(rooms, hotelDocId) {
@@ -109,7 +95,6 @@ function displayRooms(rooms, hotelDocId) {
     });
 }
 
-// Function to toggle room status
 function toggleRoomStatus(hotelDocId, room) {
     const newStatus = room.status === 'Available' ? 'Booked' : 'Available';
     const roomToUpdate = { ...room, status: newStatus };
@@ -130,8 +115,42 @@ function toggleRoomStatus(hotelDocId, room) {
         }
     }).then(() => {
         console.log(`Room ${room.roomNumber} status updated to ${newStatus}`);
-        fetchHotelData(auth.currentUser.email);
+        fetchHotelData(auth.currentUser.email); // Refetch all data to update the UI
     }).catch((error) => {
         console.error("Transaction failed:", error);
+    });
+}
+function displayAllHotels(hotels) {
+    const mainContent = document.getElementById('app-container');
+    mainContent.innerHTML = ''; // Clear existing content
+
+    hotels.forEach(hotel => {
+        const hotelDiv = document.createElement('div');
+        hotelDiv.className = 'hotel-container';
+        hotelDiv.innerHTML = `
+            <h2>${hotel.name}</h2>
+            <div class="room-grid" id="room-grid-${hotel.name.replace(/\s/g, '-').toLowerCase()}"></div>
+        `;
+        mainContent.appendChild(hotelDiv);
+
+        const roomGridForHotel = document.getElementById(`room-grid-${hotel.name.replace(/\s/g, '-').toLowerCase()}`);
+        
+        hotel.rooms.forEach(room => {
+            const roomCard = document.createElement('div');
+            const statusClass = room.status === 'Available' ? 'status-available' : 'status-booked';
+            
+            roomCard.className = `room-card ${statusClass}`;
+            roomCard.innerHTML = `
+                <span class="room-number">${room.roomNumber}</span>
+                <span class="room-status">${room.status}</span>
+            `;
+            
+            // Re-add the click listener with the necessary data
+            roomCard.addEventListener('click', () => {
+                toggleRoomStatus(hotel.id, room);
+            });
+
+            roomGridForHotel.appendChild(roomCard);
+        });
     });
 }
