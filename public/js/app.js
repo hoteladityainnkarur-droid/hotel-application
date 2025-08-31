@@ -1,7 +1,25 @@
 // js/app.js
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, runTransaction } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, runTransaction } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
+// Your Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyD1z9Y9jKkxjfS3MRlyGpxB7C_k7keQjfg",
+    authDomain: "hotelmanagement-fbd99.firebaseapp.com",
+    projectId: "hotelmanagement-fbd99",
+    storageBucket: "hotelmanagement-fbd99.firebasestorage.app",
+    messagingSenderId: "952002030988",
+    appId: "1:952002030988:web:4228d0ca756f8fa2387aa9",
+    measurementId: "G-2F1NCYNN16"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Get HTML elements
 const loginForm = document.getElementById('login-form');
 const appContainer = document.getElementById('app-container');
 const loginContainer = document.getElementById('login-container');
@@ -9,20 +27,13 @@ const hotelNameElement = document.getElementById('hotel-name');
 const roomGrid = document.getElementById('room-grid');
 const logoutBtn = document.getElementById('logout-btn');
 
-// Initialize Firebase services
-const auth = getAuth();
-const db = getFirestore();
-
-// Firestore Collection Reference
-const hotelsRef = db.collection('hotels');
-
 // Login Event Listener
 loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 
-    signInWithEmailAndPassword(auth, email, password) 
+    signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
             console.log('Login successful!');
             loginContainer.style.display = 'none';
@@ -37,7 +48,7 @@ loginForm.addEventListener('submit', (e) => {
 
 // Logout Event Listener
 logoutBtn.addEventListener('click', () => {
-    auth.signOut().then(() => {
+    signOut(auth).then(() => {
         console.log('User signed out.');
         loginContainer.style.display = 'block';
         appContainer.style.display = 'none';
@@ -59,7 +70,7 @@ function fetchHotelData(userEmail) {
         hotelDocId = 'hotel-c';
     } else {
         alert('Unauthorized user.');
-        auth.signOut();
+        signOut(auth);
         return;
     }
 
